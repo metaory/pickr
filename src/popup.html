@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 320px;
+      padding: 16px;
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .section {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .section h4 {
+      margin: 0 0 8px 0;
+      color: #1f2937;
+      font-size: 14px;
+    }
+    .setting {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .setting:last-child {
+      margin-bottom: 0;
+    }
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 20px;
+      background: #d1d5db;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle.active {
+      background: #059669;
+    }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle.active::after {
+      transform: translateX(20px);
+    }
+    .shortcut {
+      background: #f3f4f6;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .info {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+    .info h4 {
+      margin: 0 0 8px 0;
+      color: #1e40af;
+      font-size: 14px;
+    }
+    .info p {
+      margin: 0;
+      font-size: 13px;
+      color: #374151;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h3 style="margin: 0;">pickr</h3>
+    <span style="font-size: 12px; color: #6b7280;">v0.1.0</span>
+  </div>
+  
+  <div class="section">
+    <h4>Keyboard Shortcuts</h4>
+    <div class="setting">
+      <span>Mouse Selector</span>
+      <span class="shortcut">Alt+M</span>
+    </div>
+    <div class="setting">
+      <span>Input Selector</span>
+      <span class="shortcut">Alt+I</span>
+    </div>
+  </div>
+  
+  <div class="section">
+    <h4>Interface Settings</h4>
+    <div class="setting">
+      <span>Auto-open sidebar</span>
+      <div class="toggle active" id="auto-sidebar"></div>
+    </div>
+    <div class="setting">
+      <span>Show help overlay</span>
+      <div class="toggle active" id="show-help"></div>
+    </div>
+    <div class="setting">
+      <span>Highlight elements</span>
+      <div class="toggle active" id="highlight-elements"></div>
+    </div>
+  </div>
+  
+  <div class="section">
+    <h4>Action Settings</h4>
+    <div class="setting">
+      <span>Copy to clipboard</span>
+      <div class="toggle active" id="copy-clipboard"></div>
+    </div>
+    <div class="setting">
+      <span>Show notifications</span>
+      <div class="toggle active" id="show-notifications"></div>
+    </div>
+  </div>
+  
+  <div class="info">
+    <h4>How to use</h4>
+    <p>
+      Use keyboard shortcuts to activate selection modes. The main interface will appear as overlays on the page with a sidebar for previews and action hints.
+    </p>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html> 

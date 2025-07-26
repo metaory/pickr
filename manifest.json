@@ -1,0 +1,47 @@
+{
+  "name": "pickr",
+  "short_name": "pickr",
+  "description": "Visual element picker and DOM inspector",
+  "version": "0.0.1",
+  "manifest_version": 3,
+  "author": {
+    "email": "metaory@gmail.com"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "icons": {
+     "16": "res/xpick-16.png",
+     "32": "res/xpick-32.png",
+     "48": "res/xpick-48.png",
+    "128": "res/xpick-128.png"
+  },
+  "commands": {
+    "mouse-selector": {
+      "suggested_key": {
+        "default": "Alt+M"
+      },
+      "description": "Activate mouse selector mode"
+    },
+    "input-selector": {
+      "suggested_key": {
+        "default": "Alt+I"
+      },
+      "description": "Activate input selector mode"
+    }
+  },
+  "background": {
+    "service_worker": "src/sw.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "pickr",
+    "default_popup": "src/popup.html",
+    "default_icon": "res/x_hit_256.png"
+  }
+}

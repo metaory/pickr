@@ -1,16 +1,50 @@
 // Modern functional element selector with overlay-based interface
 // Focuses on overlay UI with sidebar previews and comprehensive legend hints
 
+// Declarative configuration
+const config = {
+  // Event mappings
+  events: {
+    mouse: {
+      contextmenu: 'contextmenu' // Right click for context menu
+    },
+    keyboard: {
+      keydown: (e) => e.key.toLowerCase()
+    }
+  },
+  
+  // UI settings
+  ui: {
+    colors: {
+      primary: '#60a5fa',
+      success: '#22c55e',
+      warning: '#fbbf24',
+      mouse: '#ec4899'
+    },
+    timing: {
+      toast: 2000,
+      debounce: 100
+    }
+  },
+  
+  // Element selectors
+  selectors: {
+    pickrElements: '[id^="pickr-"]',
+    highlightedElements: '[style*="outline: 2px solid"]'
+  }
+}
+
 // Guard against multiple script injection
 if (window.pickrMouseSelector && window.pickrInputSelector) {
   console.log('pickr element selector already loaded')
 } else {
 
+// Declarative event mappings
+const eventMappings = config.events
+
 // Functional utility composition
 const pipe = (...fns) => x => fns.reduce((acc, fn) => fn(acc), x)
-const tap = fn => x => { fn(x); return x }
-const when = (pred, fn) => x => pred(x) ? fn(x) : x
-const curry = fn => (...args) => args.length >= fn.length ? fn(...args) : curry(fn.bind(null, ...args))
+const tap = (fn) => x => { fn(x); return x }
 
 // Proxy-based state management
 const createState = (initial = {}) => {
@@ -102,13 +136,43 @@ const debounce = (fn, ms = 50) => {
   }
 }
 
-// Event management system
+// Functional event management system
 const eventManager = {
+  // Declarative event registration
   add: (element, event, handler, options = {}) => {
-    // Use capture phase for keydown events to handle them before the page
     const useCapture = event === 'keydown' || options.capture
     element.addEventListener(event, handler, { capture: useCapture, ...options })
     return () => element.removeEventListener(event, handler, { capture: useCapture, ...options })
+  },
+  
+  // Functional cleanup
+  removeAll: (cleanups) => {
+    if (Array.isArray(cleanups)) {
+      cleanups.forEach(cleanup => {
+        if (typeof cleanup === 'function') {
+          try {
+            cleanup()
+          } catch (error) {
+            console.warn('Event cleanup failed:', error)
+          }
+        }
+      })
+    }
+  },
+  
+  // Declarative event registration helpers
+  register: {
+    mouse: (element, handlers, options = {}) => {
+      return Object.entries(handlers).map(([event, handler]) => 
+        eventManager.add(element, event, handler, options)
+      )
+    },
+    
+    keyboard: (element, handlers, options = { capture: true }) => {
+      return Object.entries(handlers).map(([event, handler]) => 
+        eventManager.add(element, event, handler, options)
+      )
+    }
   }
 }
 
@@ -203,6 +267,9 @@ const compactHelpOverlay = {
       .map(action => `${action.key.toUpperCase()}:${action.name.split(' ')[0]}`)
       .join(' ')
     
+    // Add mouse actions for mouse mode
+    const mouseActions = mode === 'mouse' ? 'Right:Context Menu' : ''
+    
     return /*html*/`
       <div style="display: flex; flex-direction: column; gap: 4px;">
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -217,6 +284,12 @@ const compactHelpOverlay = {
           <div style="display: flex; align-items: center; gap: 4px; opacity: 0.7; font-size: 11px;">
             <span style="color: #fbbf24; font-weight: 600;">Actions:</span>
             <span style="color: #fbbf24;">${actionShortcuts}</span>
+          </div>
+        ` : ''}
+        ${mouseActions ? `
+          <div style="display: flex; align-items: center; gap: 4px; opacity: 0.7; font-size: 11px;">
+            <span style="color: #ec4899; font-weight: 600;">Mouse:</span>
+            <span style="color: #ec4899;">${mouseActions}</span>
           </div>
         ` : ''}
       </div>
@@ -548,7 +621,7 @@ const handleAction = (key, element) => {
   const toastMessage = actionResult.feedback || `Action ${key} executed`
   toastSystem.create(toastMessage, toastType)
   
-  sidebarOps.update(templates.actionResult(actionResult.feedback, actionResult.result))
+  sidebar.update(templates.actionResult(actionResult.feedback, actionResult.result))
   return true
 }
 
@@ -574,6 +647,35 @@ const isPickrElement = (element) => {
   })
 }
 
+// Simple event handler
+const createEventHandler = (mapping) => async (e) => {
+  if (isPickrElement(e.target)) {
+    e.preventDefault()
+    e.stopPropagation()
+    return false
+  }
+  
+  e.preventDefault()
+  e.stopPropagation()
+  
+  // Show context menu on right-click
+  if (e.button === 2 && state.currentElement) {
+    contextMenu.show(state.currentElement, e)
+    return false
+  }
+  
+  // Handle other mouse events if needed
+  const actionKey = typeof mapping === 'function' ? mapping(e) : mapping
+  if (state.currentElement && window.pickrActionManager && actionKey) {
+    const result = await window.pickrActionManager.executeByKey(actionKey, state.currentElement)
+    if (result) {
+      toastSystem.create(result.feedback, result.error ? 'error' : 'success', config.ui.timing.toast)
+    }
+  }
+  
+  return false
+}
+
 // Unified keyboard handler for both modes
 const createKeyboardHandler = (cleanups, additionalHandlers = {}) => {
   const keyHandlers = {
@@ -581,7 +683,6 @@ const createKeyboardHandler = (cleanups, additionalHandlers = {}) => {
     p: () => togglePause(),
     s: () => toggleSidebar(),
     h: () => toggleLegend(),
-    i: () => toggleInputOverlay(),
     '?': () => toggleFullHelp(),
     w: () => moveSelection('up'),
     a: () => moveSelection('left'),
@@ -594,7 +695,9 @@ const createKeyboardHandler = (cleanups, additionalHandlers = {}) => {
   }
   
   return (e) => {
-    // Allow normal input behavior when input fields have focus
+    const key = e.key.toLowerCase()
+    
+    // Early return for input fields (except our own)
     const activeElement = document.activeElement
     const isInputField = activeElement && (
       activeElement.tagName === 'INPUT' || 
@@ -603,23 +706,18 @@ const createKeyboardHandler = (cleanups, additionalHandlers = {}) => {
       activeElement.id === 'pickr-selector-input'
     )
     
-    // Only handle our keys if not in an input field (except our own input)
-    if (isInputField && activeElement.id !== 'pickr-selector-input') {
-      return
-    }
+    if (isInputField && activeElement.id !== 'pickr-selector-input') return
     
-    const key = e.key.toLowerCase()
-    
-    // Check if this is one of our action keys
+    // Check if this is one of our keys
     const isActionKey = window.pickrActionManager && window.pickrActionManager.getByKey(key)
     const isInterfaceKey = keyHandlers[key] || additionalHandlers[key]
     
-    // If it's our key, prevent everything
-    if (isActionKey || isInterfaceKey) {
-      e.preventDefault()
-      e.stopPropagation()
-      e.stopImmediatePropagation()
-    }
+    if (!isActionKey && !isInterfaceKey) return
+    
+    // Prevent default for our keys
+    e.preventDefault()
+    e.stopPropagation()
+    e.stopImmediatePropagation()
     
     // Handle action keys first
     if (handleAction(key, state.currentElement)) return
@@ -642,37 +740,35 @@ const createToggle = (getElement, showMessage, hideMessage) => () => {
   if (!element) return
   
   const isVisible = element.style.opacity !== '0' && element.style.display !== 'none'
+  
   if (!isVisible) {
-    element.style.opacity = '0.95'
-    element.style.display = 'block'
-    toastSystem.create(showMessage, 'info', 1500)
+    showElement(element, showMessage)
     return
   }
   
+  hideElement(element, hideMessage)
+}
+
+const showElement = (element, message) => {
+  element.style.opacity = '0.95'
+  element.style.display = 'block'
+  toastSystem.create(message, 'info', config.ui.timing.toast)
+}
+
+const hideElement = (element, message) => {
   element.style.opacity = '0'
   setTimeout(() => {
     if (element.style.opacity === '0') element.style.display = 'none'
   }, 300)
-  toastSystem.create(hideMessage, 'info', 1500)
+  toastSystem.create(message, 'info', config.ui.timing.toast)
 }
 
 const toggleSidebar = () => {
-  const sidebar = document.getElementById('pickr-sidebar')
-  if (!sidebar) {
-    sidebarOps.open()
-    toastSystem.create('Sidebar opened', 'info', 1500)
+  if (state.isSidebarOpen) {
+    sidebar.close()
     return
   }
-  
-  const isOpen = sidebar.style.transform === 'translateX(0px)'
-  if (!isOpen) {
-    sidebarOps.open()
-    toastSystem.create('Sidebar opened', 'info', 1500)
-    return
-  }
-  
-  sidebarOps.close()
-  toastSystem.create('Sidebar closed', 'info', 1500)
+  sidebar.open()
 }
 
 const toggleLegend = createToggle(
@@ -687,25 +783,8 @@ const toggleFullHelp = createToggle(
   'Full help closed'
 )
 
-const toggleInputOverlay = () => {
-  const inputOverlay = document.getElementById('pickr-input-overlay')
-  if (!inputOverlay) return
-  
-  const isVisible = inputOverlay.style.display !== 'none'
-  if (!isVisible) {
-    inputOverlay.style.display = 'block'
-    const input = inputOverlay.querySelector('#pickr-selector-input')
-    if (input) input.focus()
-    toastSystem.create('Input overlay shown', 'info', 1500)
-    return
-  }
-  
-  inputOverlay.style.display = 'none'
-  toastSystem.create('Input overlay hidden', 'info', 1500)
-}
-
 const togglePause = () => {
-  state.isPaused = !state.isPaused
+  setState({ isPaused: !state.isPaused })
   
   const legend = document.getElementById('pickr-legend-overlay')
   if (legend) {
@@ -718,63 +797,57 @@ const togglePause = () => {
   
   const message = state.isPaused ? 'Selection paused' : 'Selection resumed'
   const type = state.isPaused ? 'warning' : 'success'
-  toastSystem.create(message, type, 1500)
+  toastSystem.create(message, type, config.ui.timing.toast)
 }
 
 // Move selection functionality
 const moveSelection = (direction) => {
   if (!state.currentElement) {
-    toastSystem.create('No element selected', 'warning', 1500)
+    toastSystem.create('No element selected', 'warning', config.ui.timing.toast)
     return
   }
   
-  let nextElement = null
+  const nextElement = getNextElement(direction, state.currentElement)
   
-  switch (direction) {
-    case 'up':
-      nextElement = findElementInDirection(state.currentElement, 'up')
-      break
-    case 'down':
-      nextElement = findElementInDirection(state.currentElement, 'down')
-      break
-    case 'left':
-      nextElement = findElementInDirection(state.currentElement, 'left')
-      break
-    case 'right':
-      nextElement = findElementInDirection(state.currentElement, 'right')
-      break
-    case 'previous':
-      nextElement = findPreviousElement(state.currentElement)
-      break
-    case 'next':
-      nextElement = findNextElement(state.currentElement)
-      break
+  if (!nextElement || isPickrElement(nextElement)) {
+    toastSystem.create(`No element ${direction}`, 'warning', config.ui.timing.toast)
+    return
   }
   
-  if (nextElement && !isPickrElement(nextElement)) {
-    // Clear previous selection
-    if (state.currentElement) {
-      state.currentElement.style.outline = ''
-      state.currentElement.style.outlineOffset = ''
-    }
-    
-    // Set new selection
-    state.currentElement = nextElement
-    domOps.setStyles(nextElement, {
-      outline: '2px solid rgba(59, 130, 246, 0.6)',
-      outlineOffset: '2px'
-    })
-    
-    updateHighlight(nextElement)
-    sidebarOps.update(templates.mouseStats(elementOps.getStats(nextElement)))
-    
-    // Scroll element into view if needed
-    nextElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    
-    toastSystem.create(`Moved ${direction}`, 'info', 1000)
-  } else {
-    toastSystem.create(`No element ${direction}`, 'warning', 1000)
+  selectElement(nextElement)
+  nextElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  toastSystem.create(`Moved ${direction}`, 'info', config.ui.timing.toast)
+}
+
+const getNextElement = (direction, element) => {
+  const directionMap = {
+    up: () => findElementInDirection(element, 'up'),
+    down: () => findElementInDirection(element, 'down'),
+    left: () => findElementInDirection(element, 'left'),
+    right: () => findElementInDirection(element, 'right'),
+    previous: () => findPreviousElement(element),
+    next: () => findNextElement(element)
   }
+  
+  return directionMap[direction]?.() || null
+}
+
+const selectElement = (element) => {
+  // Clear previous selection
+  if (state.currentElement) {
+    state.currentElement.style.outline = ''
+    state.currentElement.style.outlineOffset = ''
+  }
+  
+  // Set new selection
+  setState({ currentElement: element })
+  domOps.setStyles(element, {
+    outline: '2px solid rgba(59, 130, 246, 0.6)',
+    outlineOffset: '2px'
+  })
+  
+  updateHighlight(element)
+  sidebar.update(templates.mouseStats(elementOps.getStats(element)))
 }
 
 // Helper functions for element navigation
@@ -783,25 +856,17 @@ const findElementInDirection = (element, direction) => {
   const centerX = rect.left + rect.width / 2
   const centerY = rect.top + rect.height / 2
   
-  let targetX = centerX
-  let targetY = centerY
-  
-  switch (direction) {
-    case 'up':
-      targetY = rect.top - 10
-      break
-    case 'down':
-      targetY = rect.bottom + 10
-      break
-    case 'left':
-      targetX = rect.left - 10
-      break
-    case 'right':
-      targetX = rect.right + 10
-      break
+  const directionMap = {
+    up: { x: centerX, y: rect.top - 10 },
+    down: { x: centerX, y: rect.bottom + 10 },
+    left: { x: rect.left - 10, y: centerY },
+    right: { x: rect.right + 10, y: centerY }
   }
   
-  const elementAtPoint = document.elementFromPoint(targetX, targetY)
+  const target = directionMap[direction]
+  if (!target) return null
+  
+  const elementAtPoint = document.elementFromPoint(target.x, target.y)
   return elementAtPoint && elementAtPoint !== element ? elementAtPoint : null
 }
 
@@ -835,25 +900,47 @@ const findNextElement = (element) => {
   return null
 }
 
-const exitMode = (cleanups) => {
-  eventManager.removeAll(cleanups)
-  updateHighlight(null)
-  legendOverlay.remove()
-  compactHelpOverlay.remove()
-  sidebarOps.close()
+// Simple cleanup system
+const cleanup = {
+  // Cleanup tasks
+  events: (cleanups) => eventManager.removeAll(cleanups),
+  highlight: () => updateHighlight(null),
+  overlays: () => {
+    legendOverlay.remove()
+    compactHelpOverlay.remove()
+    contextMenu.hide()
+  },
+  sidebar: () => sidebar.close(),
+  inputOverlay: () => {
+    const inputOverlay = document.getElementById('pickr-input-overlay')
+    if (inputOverlay) domOps.remove(inputOverlay)
+  },
+  outlines: () => {
+    document.querySelectorAll(config.selectors.highlightedElements).forEach(el => {
+      el.style.outline = ''
+      el.style.outlineOffset = ''
+    })
+  },
+  state: () => setState({ activeMode: null, currentElement: null, isPaused: false }),
+  feedback: () => toastSystem.create('Mode exited', 'info', config.ui.timing.toast),
   
-  const inputOverlay = document.getElementById('pickr-input-overlay')
-  if (inputOverlay) domOps.remove(inputOverlay)
-  
-  document.querySelectorAll('[style*="outline: 2px solid"]').forEach(el => {
-    el.style.outline = ''
-    el.style.outlineOffset = ''
-  })
-  
-  toastSystem.create('Mode exited', 'info', 1500)
+  // Execute cleanup
+  all: (cleanups) => {
+    cleanup.events(cleanups)
+    cleanup.highlight()
+    cleanup.overlays()
+    cleanup.sidebar()
+    cleanup.inputOverlay()
+    cleanup.outlines()
+    cleanup.state()
+    cleanup.feedback()
+  }
 }
 
-// State management
+// Simple exit function
+const exitMode = (cleanups) => cleanup.all(cleanups)
+
+// Simple state management
 const state = createState({
   sidebar: null,
   isSidebarOpen: false,
@@ -862,23 +949,24 @@ const state = createState({
   currentElement: null
 })
 
+// Simple state helpers
+const setState = (updates) => Object.assign(state, updates)
+const getState = () => ({ ...state })
+
 // Sidebar operations
-const sidebarOps = {
+const sidebar = {
   open: () => {
     if (state.isSidebarOpen) return
-    
     state.sidebar = state.sidebar || createSidebar()
     state.sidebar.style.transform = 'translateX(0)'
-    state.isSidebarOpen = true
-    state.sidebar.querySelector('#pickr-close').onclick = sidebarOps.close
+    setState({ isSidebarOpen: true })
+    state.sidebar.querySelector('#pickr-close').onclick = sidebar.close
   },
   
   close: () => {
     if (!state.sidebar || !state.isSidebarOpen) return
-    
     state.sidebar.style.transform = 'translateX(100%)'
-    state.isSidebarOpen = false
-    state.activeMode = null
+    setState({ isSidebarOpen: false, activeMode: null })
   },
   
   update: (content) => {
@@ -887,77 +975,184 @@ const sidebarOps = {
   }
 }
 
+// Simple context menu
+const contextMenu = {
+  show: (element, event) => {
+    contextMenu.hide()
+    
+    const menu = domOps.create('div', {
+      id: 'pickr-context-menu',
+      innerHTML: contextMenu.getContent()
+    })
+    
+    domOps.setStyles(menu, {
+      position: 'fixed',
+      left: `${event.clientX}px`,
+      top: `${event.clientY}px`,
+      background: 'rgba(0, 0, 0, 0.9)',
+      backdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
+      borderRadius: '12px',
+      padding: '8px 0',
+      fontSize: '14px',
+      zIndex: '999999',
+      minWidth: '180px',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    })
+    
+    domOps.append(document.body, menu)
+    
+    // Handle menu item clicks
+    menu.addEventListener('click', async (e) => {
+      const item = e.target.closest('.context-menu-item')
+      if (item) {
+        const actionKey = item.dataset.action
+        if (actionKey && window.pickrActionManager) {
+          const result = await window.pickrActionManager.executeByKey(actionKey, element)
+          if (result) {
+            toastSystem.create(result.feedback, result.error ? 'error' : 'success', config.ui.timing.toast)
+          }
+        }
+        contextMenu.hide()
+      }
+    })
+    
+    // Hide menu on outside click
+    setTimeout(() => {
+      document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target)) contextMenu.hide()
+      })
+    }, 100)
+  },
+  
+  getContent: () => {
+    const actions = window.pickrActionManager ? window.pickrActionManager.getAll() : []
+    const grouped = actions.reduce((acc, action) => {
+      if (!acc[action.category]) acc[action.category] = []
+      acc[action.category].push(action)
+      return acc
+    }, {})
+    
+    return Object.entries(grouped).map(([category, categoryActions]) => `
+      <div class="context-menu-category">
+        <div class="context-menu-category-header" style="
+          padding: 4px 16px;
+          font-size: 11px;
+          color: rgba(255,255,255,0.6);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          font-weight: 600;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+          margin-bottom: 4px;
+        ">${category}</div>
+        ${categoryActions.map(action => `
+          <div class="context-menu-item" data-action="${action.key}" style="
+            padding: 8px 16px;
+            cursor: pointer;
+            color: white;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          " onmouseenter="this.style.background='rgba(255,255,255,0.1)'" onmouseleave="this.style.background='transparent'">
+            <span>${action.description}</span>
+            <kbd style="
+              background: rgba(255,255,255,0.2);
+              color: white;
+              border-radius: 4px;
+              padding: 2px 6px;
+              font-size: 11px;
+              font-family: monospace;
+              border: 1px solid rgba(255,255,255,0.3);
+            ">${action.key.toUpperCase()}</kbd>
+          </div>
+        `).join('')}
+      </div>
+    `).join('')
+  },
+  
+  hide: () => {
+    const menu = document.getElementById('pickr-context-menu')
+    if (menu) menu.remove()
+  }
+}
+
 // Mouse selector mode
 const pickrMouseSelector = () => {
-  state.activeMode = 'mouse'
-  state.isPaused = false
-  sidebarOps.open()
+  setState({ activeMode: 'mouse', isPaused: false, currentElement: null })
+  sidebar.open()
   legendOverlay.create('mouse')
   compactHelpOverlay.create('mouse')
   
   const cleanups = []
-  let currentElement = null
   
   const handleMouseMove = (e) => {
     if (state.isPaused) return
     
     const element = e.target
+    
+    // Early return for pickr elements
     if (isPickrElement(element)) {
-      if (currentElement) {
-        currentElement.style.outline = ''
-        currentElement.style.outlineOffset = ''
-        currentElement = null
-        state.currentElement = null
-        updateHighlight(null)
-      }
+      clearCurrentElement()
       return
     }
     
-    if (element === currentElement) return
+    // Early return if same element
+    if (element === state.currentElement) return
     
-    if (currentElement) {
-      currentElement.style.outline = ''
-      currentElement.style.outlineOffset = ''
-    }
+    // Clear previous element
+    clearCurrentElement()
     
-    currentElement = element
-    state.currentElement = element
-    
+    // Set new element
+    setCurrentElement(element)
+  }
+  
+  const clearCurrentElement = () => {
+    if (!state.currentElement) return
+    state.currentElement.style.outline = ''
+    state.currentElement.style.outlineOffset = ''
+    setState({ currentElement: null })
+    updateHighlight(null)
+  }
+  
+  const setCurrentElement = (element) => {
+    setState({ currentElement: element })
     domOps.setStyles(element, {
       outline: '2px solid rgba(59, 130, 246, 0.6)',
       outlineOffset: '2px'
     })
-    
     updateHighlight(element)
-    sidebarOps.update(templates.mouseStats(elementOps.getStats(element)))
-  }
-  
-  const handleClick = (e) => {
-    if (isPickrElement(e.target)) {
-      e.preventDefault()
-      e.stopPropagation()
-      return false
-    }
-    
-    e.preventDefault()
-    e.stopPropagation()
-    return false
+    sidebar.update(templates.mouseStats(elementOps.getStats(element)))
   }
   
   const handleKeyDown = createKeyboardHandler(cleanups)
   
+  // Declarative event registration
+  const mouseHandlers = {
+    mousemove: handleMouseMove,
+    ...Object.fromEntries(
+      Object.entries(eventMappings.mouse).map(([event, alias]) => [
+        event, 
+        createEventHandler(alias)
+      ])
+    )
+  }
+  
+  const keyboardHandlers = {
+    keydown: handleKeyDown
+  }
+  
   cleanups.push(
-    eventManager.add(document, 'mousemove', handleMouseMove),
-    eventManager.add(document, 'click', handleClick),
-    eventManager.add(document, 'keydown', handleKeyDown, { capture: true })
+    ...eventManager.register.mouse(document, mouseHandlers),
+    ...eventManager.register.keyboard(document, keyboardHandlers)
   )
 }
 
 // Input selector mode
 const pickrInputSelector = () => {
-  state.activeMode = 'input'
-  state.isPaused = false
-  sidebarOps.open()
+  setState({ activeMode: 'input', isPaused: false, currentElement: null })
+  sidebar.open()
   legendOverlay.create('input')
   compactHelpOverlay.create('input')
   
@@ -1016,9 +1211,10 @@ const pickrInputSelector = () => {
   const updateResults = debounce((selector) => {
     if (state.isPaused) return
     
+    // Early return for empty selector
     if (!selector.trim()) {
       updateHighlight(null)
-      sidebarOps.update(/*html*/`
+      sidebar.update(/*html*/`
         <div style="margin-bottom: 20px;">
           <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px;">Input Selector</h4>
           <div style="color: #6b7280; text-align: center; padding: 40px 20px;">
@@ -1031,35 +1227,42 @@ const pickrInputSelector = () => {
       return
     }
     
-    document.querySelectorAll('[style*="outline: 2px solid"]').forEach(el => {
+    // Clear existing outlines
+    document.querySelectorAll(config.selectors.highlightedElements).forEach(el => {
       el.style.outline = ''
       el.style.outlineOffset = ''
     })
     
+    // Early return for invalid selector
     if (!elementOps.isValidSelector(selector)) {
       updateHighlight(null)
-      sidebarOps.update(templates.error(`Invalid selector: ${selector}`))
+      sidebar.update(templates.error(`Invalid selector: ${selector}`))
       return
     }
     
     const elements = elementOps.queryAll(selector)
+    
+    // Early return for no elements
     if (elements.length === 0) {
       updateHighlight(null)
-      sidebarOps.update(templates.error(`No elements found for selector: ${selector}`))
+      sidebar.update(templates.error(`No elements found for selector: ${selector}`))
       return
     }
     
     const validElements = elements.filter(el => !isPickrElement(el))
+    
+    // Early return for no valid elements
     if (validElements.length === 0) {
       updateHighlight(null)
-      sidebarOps.update(templates.error(`No valid elements found (excluding interface elements)`))
+      sidebar.update(templates.error(`No valid elements found (excluding interface elements)`))
       return
     }
     
+    // Process valid elements
     validElements.forEach((el, index) => {
       if (index === 0) {
         updateHighlight(el)
-        state.currentElement = el
+        setState({ currentElement: el })
       }
       domOps.setStyles(el, {
         outline: '2px solid rgba(59, 130, 246, 0.6)',
@@ -1067,8 +1270,8 @@ const pickrInputSelector = () => {
       })
     })
     
-    sidebarOps.update(templates.inputResults(selector, validElements))
-  }, 100)
+    sidebar.update(templates.inputResults(selector, validElements))
+  }, config.ui.timing.debounce)
   
   const handleInput = (e) => updateResults(e.target.value)
   
@@ -1083,9 +1286,18 @@ const pickrInputSelector = () => {
     exitMode(cleanups)
   }
   
+  // Declarative event registration
+  const inputHandlers = {
+    input: handleInput
+  }
+  
+  const keyboardHandlers = {
+    keydown: handleKeyDown
+  }
+  
   cleanups.push(
-    eventManager.add(input, 'input', handleInput),
-    eventManager.add(document, 'keydown', handleKeyDown, { capture: true })
+    ...eventManager.register.mouse(input, inputHandlers),
+    ...eventManager.register.keyboard(document, keyboardHandlers)
   )
 }
 
@@ -1094,4 +1306,4 @@ window.pickrMouseSelector = pickrMouseSelector
 window.pickrInputSelector = pickrInputSelector
 
 // Element selector ready
-} 
+}

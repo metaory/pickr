@@ -1,22 +1,17 @@
-// Copy element HTML action
-try {
-  const copyHtmlAction = {
-    name: 'Copy HTML',
-    key: 'h',
-    description: 'Copy element HTML',
-    category: 'copy',
-    execute: (element) => {
-      const html = element.outerHTML
-      navigator.clipboard.writeText(html)
-      return {
-        feedback: `Copied HTML (${html.length} chars)`,
-        result: html
-      }
-    }
+// Declarative action definition
+const copyHtmlAction = {
+  name: 'Copy HTML',
+  key: 'h',
+  aliases: [],
+  category: 'Copy',
+  description: 'Copy element HTML',
+  execute: (element) => {
+    const html = element.outerHTML || element.innerHTML || ''
+    return html
+      ? { feedback: 'HTML copied to clipboard', result: html }
+      : { feedback: 'No HTML content found', result: null, error: true }
   }
-  if (window.pickrActionManager) {
-    window.pickrActionManager.register(copyHtmlAction)
-  }
-} catch (e) {
-  // Action already registered, ignore
-} 
+}
+
+// Register action
+window.pickrActionManager.register(copyHtmlAction) 

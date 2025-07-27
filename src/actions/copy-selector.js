@@ -1,45 +1,48 @@
-// Copy CSS selector for element action
-try {
-  const generateSelector = (element) => {
-    if (element.id) return `#${element.id}`
-    let path = []
-    let current = element
-    while (current && current !== document.body) {
-      let selector = current.tagName.toLowerCase()
-      if (current.className) {
-        const classes = current.className.split(' ').filter(c => c.trim())
-        if (classes.length > 0) {
-          selector += '.' + classes.join('.')
-        }
-      }
-      const siblings = Array.from(current.parentNode?.children || [])
-      if (siblings.length > 1) {
-        const index = siblings.indexOf(current) + 1
-        selector += `:nth-child(${index})`
-      }
-      path.unshift(selector)
-      current = current.parentNode
+// Declarative action definition
+const copySelectorAction = {
+  name: 'Copy Selector',
+  key: 's',
+  aliases: [],
+  category: 'Copy',
+  description: 'Copy CSS selector',
+  execute: (element) => {
+    if (!element) {
+      return { feedback: 'No element selected', result: null, error: true }
     }
-    return path.join(' > ')
+    
+    const selector = generateSelector(element)
+    return selector
+      ? { feedback: 'Selector copied to clipboard', result: selector }
+      : { feedback: 'Could not generate selector', result: null, error: true }
+  }
+}
+
+// Pure function for selector generation
+const generateSelector = (element) => {
+  if (element.id) return `#${element.id}`
+  
+  if (element.className) {
+    const classes = element.className.split(' ').filter(c => c.trim())
+    if (classes.length > 0) {
+      const classSelector = `.${classes.join('.')}`
+      if (document.querySelectorAll(classSelector).length === 1) {
+        return classSelector
+      }
+    }
   }
   
-  const copySelectorAction = {
-    name: 'Copy Selector',
-    key: 's',
-    description: 'Copy CSS selector for element',
-    category: 'copy',
-    execute: (element) => {
-      const selector = generateSelector(element)
-      navigator.clipboard.writeText(selector)
-      return {
-        feedback: `Copied selector: ${selector}`,
-        result: selector
-      }
-    }
+  const tag = element.tagName.toLowerCase()
+  const parent = element.parentElement
+  if (!parent) return tag
+  
+  const siblings = Array.from(parent.children).filter(child => child.tagName === element.tagName)
+  if (siblings.length === 1) {
+    return `${parent.tagName.toLowerCase()} > ${tag}`
   }
-  if (window.pickrActionManager) {
-    window.pickrActionManager.register(copySelectorAction)
-  }
-} catch (e) {
-  // Action already registered, ignore
-} 
+  
+  const index = siblings.indexOf(element) + 1
+  return `${parent.tagName.toLowerCase()} > ${tag}:nth-child(${index})`
+}
+
+// Register action
+window.pickrActionManager.register(copySelectorAction) 

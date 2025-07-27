@@ -1,26 +1,20 @@
-// Copy element attributes action
-try {
-  const copyAttributesAction = {
-    name: 'Copy Attributes',
-    key: 'a',
-    description: 'Copy element attributes as JSON',
-    category: 'copy',
-    execute: (element) => {
-      const attrs = {}
-      for (let attr of element.attributes) {
-        attrs[attr.name] = attr.value
-      }
-      const json = JSON.stringify(attrs, null, 2)
-      navigator.clipboard.writeText(json)
-      return {
-        feedback: `Copied ${Object.keys(attrs).length} attributes`,
-        result: attrs
-      }
+// Declarative action definition
+const copyAttributesAction = {
+  name: 'Copy Attributes',
+  key: 'a',
+  aliases: [],
+  category: 'Copy',
+  description: 'Copy element attributes',
+  execute: (element) => {
+    const attributes = Array.from(element.attributes || [])
+    if (attributes.length === 0) {
+      return { feedback: 'No attributes found', result: null, error: true }
     }
+    
+    const attrString = attributes.map(attr => `${attr.name}="${attr.value}"`).join(' ')
+    return { feedback: 'Attributes copied to clipboard', result: attrString }
   }
-  if (window.pickrActionManager) {
-    window.pickrActionManager.register(copyAttributesAction)
-  }
-} catch (e) {
-  // Action already registered, ignore
-} 
+}
+
+// Register action
+window.pickrActionManager.register(copyAttributesAction) 

@@ -1,28 +1,19 @@
-// Copy element URL action
-try {
-  const copyUrlAction = {
-    name: 'Copy URL',
-    key: 'u',
-    description: 'Copy element href or src URL',
-    category: 'copy',
-    execute: (element) => {
-      const url = element.href || element.src || ''
-      if (url) {
-        navigator.clipboard.writeText(url)
-        return {
-          feedback: `Copied URL: ${url}`,
-          result: url
-        }
-      }
-      return {
-        feedback: 'No URL found on element',
-        result: null
-      }
+// Declarative action definition
+const copyUrlAction = {
+  name: 'Copy URL',
+  key: 'u',
+  aliases: [],
+  category: 'Copy',
+  description: 'Copy element URL',
+  execute: (element) => {
+    const url = element.href || element.src || element.getAttribute('data-url') || ''
+    if (!url) {
+      return { feedback: 'No URL found', result: null, error: true }
     }
+    
+    return { feedback: 'URL copied to clipboard', result: url }
   }
-  if (window.pickrActionManager) {
-    window.pickrActionManager.register(copyUrlAction)
-  }
-} catch (e) {
-  // Action already registered, ignore
-} 
+}
+
+// Register action
+window.pickrActionManager.register(copyUrlAction) 

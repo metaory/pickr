@@ -1,22 +1,17 @@
-// Copy element text content action
-try {
-  const copyTextAction = {
-    name: 'Copy Inner Text',
-    key: 'y',
-    description: 'Copy element text content',
-    category: 'copy',
-    execute: (element) => {
-      const text = element.innerText || element.textContent || ''
-      navigator.clipboard.writeText(text)
-      return {
-        feedback: `Copied ${text.length} characters`,
-        result: text
-      }
-    }
+// Declarative action definition
+const copyTextAction = {
+  name: 'Copy Text',
+  key: 't',
+  aliases: [],
+  category: 'Copy',
+  description: 'Copy text content',
+  execute: (element) => {
+    const text = element.textContent?.trim() || element.innerText?.trim() || ''
+    return text 
+      ? { feedback: 'Text copied to clipboard', result: text }
+      : { feedback: 'No text content found', result: null, error: true }
   }
-  if (window.pickrActionManager) {
-    window.pickrActionManager.register(copyTextAction)
-  }
-} catch (e) {
-  // Action already registered, ignore
-} 
+}
+
+// Register action
+window.pickrActionManager.register(copyTextAction) 

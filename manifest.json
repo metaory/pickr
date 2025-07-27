@@ -2,7 +2,7 @@
   "name": "pickr",
   "short_name": "pickr",
   "description": "Visual element picker and DOM inspector",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "manifest_version": 3,
   "author": {
     "email": "metaory@gmail.com"
@@ -42,6 +42,6 @@
   "action": {
     "default_title": "pickr",
     "default_popup": "src/popup.html",
-    "default_icon": "res/x_hit_256.png"
+    "default_icon": "res/xpick-256.png"
   }
 }

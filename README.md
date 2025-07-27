@@ -1,10 +1,20 @@
-# pickr - Pick elements like a pro
+<div align="center">
+  <h1>
+    <img valign="middle" src="res/xpick-256.png" alt="pickr" height="96" />
+    pickr
+  </h1>
+  <h2>Pick elements like a pro</h2>
+  <strong>A modern Chrome extension for interactive element selection and DOM inspection</strong>
+  <br>
+  <strong>with overlay-based interface and comprehensive action hints</strong>
+</div>
 
-**Tagline**: Pick elements like a pro
+---
 
-**Short Description**: A modern Chrome extension for interactive element selection and DOM inspection with overlay-based interface and comprehensive action hints
-
-**Long Description**: pickr is a powerful Chrome extension that transforms how you interact with web page elements. Built with modern functional programming principles, it provides intuitive visual element selection through multiple modes - from hover-based mouse selection to precise CSS selector input. With overlay-based interface, comprehensive legend hints, and real-time sidebar previews, pickr makes DOM inspection and element selection effortless and precise.
+`pickr` is a powerful Chrome extension that transforms how you interact with web page elements.
+Built with modern functional programming principles,
+it provides intuitive visual element selection through multiple modes - from hover-based mouse selection to precise CSS selector input. 
+With overlay-based interface, comprehensive legend hints, and real-time sidebar previews, pickr makes DOM inspection and element selection effortless and precise.
 
 ## Features
 

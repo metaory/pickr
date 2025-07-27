@@ -1,7 +1,7 @@
 <div align="center">
   <h1>
     <img valign="middle" src="res/xpick-256.png" alt="pickr" height="96" />
-    pickr
+    ꛠickr
   </h1>
   <h2>Pick elements like a pro</h2>
   <strong>A modern Chrome extension for interactive element selection and DOM inspection</strong>

@@ -6,6 +6,7 @@ const config = {
   // Event mappings
   events: {
     mouse: {
+      click: 'click', // Left click for selection
       contextmenu: 'contextmenu' // Right click for context menu
     },
     keyboard: {
@@ -268,7 +269,7 @@ const compactHelpOverlay = {
       .join(' ')
     
     // Add mouse actions for mouse mode
-    const mouseActions = mode === 'mouse' ? 'Right:Context Menu' : ''
+    const mouseActions = mode === 'mouse' ? 'Left:Select Right:Menu' : ''
     
     return /*html*/`
       <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -302,6 +303,11 @@ const compactHelpOverlay = {
   },
   
   remove: () => {
+    const overlay = document.getElementById('pickr-compact-help')
+    if (overlay) overlay.remove()
+  },
+  
+  hide: () => {
     const overlay = document.getElementById('pickr-compact-help')
     if (overlay) overlay.remove()
   }
@@ -407,36 +413,23 @@ const legendOverlay = {
           <span class="pause-indicator" style="display: none; color: #fbbf24; font-weight: 600; margin-left: 8px;">⏸️ PAUSED</span>
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 8px; padding: 12px;">
-            <div style="font-weight: 600; font-size: 12px; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-              VIEW CONTROLS
-            </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <div>
+            <h4 style="margin: 0 0 12px 0; color: #60a5fa; font-size: 14px; font-weight: 600;">VIEW CONTROLS</h4>
             ${viewKeys}
           </div>
-          
-          <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 12px;">
-            <div style="font-weight: 600; font-size: 12px; color: #22c55e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-              MOVE CONTROLS
-            </div>
+          <div>
+            <h4 style="margin: 0 0 12px 0; color: #22c55e; font-size: 14px; font-weight: 600;">MOVE CONTROLS</h4>
             ${moveKeys}
           </div>
         </div>
         
         ${actionHelp ? `
-          <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px; padding: 12px;">
-            <div style="font-weight: 600; font-size: 12px; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-              ACTION CONTROLS
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-              ${actionHelp}
-            </div>
+          <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 16px;">
+            <h4 style="margin: 0 0 12px 0; color: #fbbf24; font-size: 14px; font-weight: 600;">ACTIONS</h4>
+            ${actionHelp}
           </div>
         ` : ''}
-        
-        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 12px; font-size: 12px; opacity: 0.7;">
-          <strong>Tip:</strong> Compact help is always visible in top-left • Use <kbd style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px;">?</kbd> for full help • Double-press any action key to toggle sidebar
-        </div>
       </div>
     `
   },
@@ -448,7 +441,7 @@ const legendOverlay = {
     }
   },
   
-  remove: () => {
+  hide: () => {
     const overlay = document.getElementById('pickr-legend-overlay')
     if (overlay) overlay.remove()
   }
@@ -459,17 +452,17 @@ const createSidebar = () => {
   const sidebar = domOps.create('div', {
     id: 'pickr-sidebar',
     innerHTML: /*html*/`
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
         <div>
-          <h3 style="margin: 0; color: #1f2937; font-size: 18px;">pickr</h3>
-          <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Element Inspector</div>
+          <h3 style="margin: 0; color: rgba(255, 255, 255, 0.95); font-size: 18px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">pickr</h3>
+          <div style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-top: 2px;">Element Inspector</div>
         </div>
-        <button id="pickr-close" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280; padding: 4px; border-radius: 4px; transition: background 0.2s;">×</button>
+        <button id="pickr-close" style="background: rgba(0, 0, 0, 0.3); border: none; font-size: 18px; cursor: pointer; color: rgba(255, 255, 255, 0.8); padding: 6px; border-radius: 8px; transition: all 0.2s ease; backdrop-filter: blur(10px);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.4)'; this.style.color='rgba(255, 255, 255, 0.95)'" onmouseleave="this.style.background='rgba(0, 0, 0, 0.3)'; this.style.color='rgba(255, 255, 255, 0.8)'">×</button>
       </div>
       <div id="pickr-content">
-        <div style="color: #6b7280; text-align: center; padding: 40px 20px;">
+        <div style="color: rgba(255, 255, 255, 0.6); text-align: center; padding: 40px 20px;">
           <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">🔍</div>
-          <div style="font-weight: 500; margin-bottom: 8px;">Select elements to see results</div>
+          <div style="font-weight: 500; margin-bottom: 8px; color: rgba(255, 255, 255, 0.8);">Select elements to see results</div>
           <div style="font-size: 13px;">Hover over page elements or use input selector</div>
         </div>
       </div>
@@ -483,14 +476,13 @@ const createSidebar = () => {
       right: '0',
       width: '350px',
       height: '100vh',
-      background: 'rgba(255, 255, 255, 0.85)',
+      background: 'rgba(0, 0, 0, 0.7)',
       backdropFilter: 'blur(25px)',
-      borderLeft: '1px solid #e2e8f0',
       zIndex: '999999',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       fontSize: '14px',
       padding: '20px',
-      boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.1)',
+      boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.3)',
       transform: 'translateX(100%)',
       transition: 'transform 0.3s ease',
       overflowY: 'auto'
@@ -538,50 +530,57 @@ const updateHighlight = (element) => {
 const templates = {
   mouseStats: (stats) => /*html*/`
     <div style="margin-bottom: 20px;">
-      <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px;">Mouse Selector</h4>
+      <h4 style="margin: 0 0 12px 0; color: rgba(255, 255, 255, 0.95); font-size: 16px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">Mouse Selector</h4>
       
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <div style="background: rgba(0, 0, 0, 0.3); border-radius: 16px; padding: 16px; margin-bottom: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-          <span style="font-size: 12px; background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-weight: 500;">${stats.tagName}</span>
-          ${stats.id ? `<span style="font-size: 12px; background: #10b981; color: white; padding: 2px 8px; border-radius: 12px;">#${stats.id}</span>` : ''}
+          <span style="font-size: 12px; background: rgba(59, 130, 246, 0.8); color: white; padding: 4px 10px; border-radius: 12px; font-weight: 500; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">${stats.tagName}</span>
+          ${stats.id ? `<span style="font-size: 12px; background: rgba(16, 185, 129, 0.8); color: white; padding: 4px 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);">#${stats.id}</span>` : ''}
         </div>
-        <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">Children: ${stats.children}</div>
-        ${stats.className ? `<div style="font-size: 13px; color: #6b7280;">Classes: ${stats.className}</div>` : ''}
+        <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7); margin-bottom: 4px;">Children: ${stats.children}</div>
+        ${stats.className ? `<div style="font-size: 13px; color: rgba(255, 255, 255, 0.7);">Classes: ${stats.className}</div>` : ''}
       </div>
       
-      <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-        <div style="font-weight: 500; margin-bottom: 8px; color: #0369a1;">CSS Selector</div>
-        <code style="font-size: 13px; color: #0369a1; background: rgba(59, 130, 246, 0.1); padding: 8px 12px; border-radius: 6px; display: block; word-break: break-all;">${stats.selector}</code>
+      <div style="background: rgba(0, 0, 0, 0.3); border-radius: 16px; padding: 16px; margin-bottom: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);">
+        <div style="font-weight: 500; margin-bottom: 8px; color: rgba(255, 255, 255, 0.9);">CSS Selector</div>
+        <code style="font-size: 13px; color: rgba(255, 255, 255, 0.9); background: rgba(59, 130, 246, 0.2); padding: 12px 16px; border-radius: 12px; display: block; word-break: break-all; backdrop-filter: blur(5px);">${stats.selector}</code>
       </div>
       
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
-        <div style="font-weight: 500; margin-bottom: 8px; color: #374151;">Content Preview</div>
-        <div style="font-size: 13px; color: #374151; max-height: 120px; overflow-y: auto; line-height: 1.4; background: white; padding: 8px; border-radius: 4px; border: 1px solid #e5e7eb;">${stats.content || '(empty)'}</div>
+      <div style="background: rgba(0, 0, 0, 0.3); border-radius: 16px; padding: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);">
+        <div style="font-weight: 500; margin-bottom: 8px; color: rgba(255, 255, 255, 0.9);">Content Preview</div>
+        <div style="font-size: 13px; color: rgba(255, 255, 255, 0.8); max-height: 120px; overflow-y: auto; line-height: 1.4; background: rgba(0, 0, 0, 0.4); padding: 12px; border-radius: 12px; backdrop-filter: blur(5px);">${stats.content || '(empty)'}</div>
       </div>
     </div>
   `,
   
-  inputResults: (selector, elements) => {
+  inputResults: (selector, elements, currentIndex = 0) => {
     const count = elements.length
     const samples = elements.slice(0, 3).map(el => elementOps.getStats(el))
     
     return /*html*/`
       <div style="margin-bottom: 20px;">
-        <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px;">Input Selector</h4>
+        <h4 style="margin: 0 0 12px 0; color: rgba(255, 255, 255, 0.95); font-size: 16px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">Input Selector</h4>
         
-        <div style="background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-          <div style="color: #166534; font-weight: 600; font-size: 16px; margin-bottom: 8px;">✓ Found ${count} element${count > 1 ? 's' : ''}</div>
-          <div style="font-size: 13px; color: #059669;">Selector: <code style="background: rgba(5, 150, 105, 0.1); padding: 4px 8px; border-radius: 4px;">${selector}</code></div>
+        <div style="background: rgba(16, 185, 129, 0.2); border-radius: 16px; padding: 16px; margin-bottom: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);">
+          <div style="color: rgba(255, 255, 255, 0.95); font-weight: 600; font-size: 16px; margin-bottom: 8px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">✓ Found ${count} element${count > 1 ? 's' : ''}</div>
+          <div style="font-size: 13px; color: rgba(255, 255, 255, 0.8);">Selector: <code style="background: rgba(16, 185, 129, 0.3); padding: 6px 10px; border-radius: 8px; backdrop-filter: blur(5px);">${selector}</code></div>
+          ${count > 1 ? `
+            <div style="font-size: 13px; color: rgba(255, 255, 255, 0.8); margin-top: 8px;">
+              <span style="background: rgba(59, 130, 246, 0.3); padding: 4px 8px; border-radius: 6px; backdrop-filter: blur(5px);">Element ${currentIndex + 1} of ${count}</span>
+              <span style="margin-left: 8px; opacity: 0.7;">Use Q/E to navigate, Enter to select</span>
+            </div>
+          ` : ''}
         </div>
         
         ${samples.map((sample, index) => /*html*/`
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+          <div style="background: rgba(0, 0, 0, 0.3); border-radius: 16px; padding: 16px; margin-bottom: 12px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); ${index === currentIndex ? 'border: 2px solid rgba(59, 130, 246, 0.5);' : ''}">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-              <span style="font-weight: 500; color: #1f2937;">Sample ${index + 1}</span>
-              <span style="font-size: 12px; background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px;">${sample.tagName}</span>
+              <span style="font-weight: 500; color: rgba(255, 255, 255, 0.9);">Sample ${index + 1}</span>
+              <span style="font-size: 12px; background: rgba(59, 130, 246, 0.8); color: white; padding: 4px 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">${sample.tagName}</span>
+              ${index === currentIndex ? '<span style="font-size: 12px; background: rgba(16, 185, 129, 0.8); color: white; padding: 4px 8px; border-radius: 8px;">SELECTED</span>' : ''}
             </div>
-            <div style="font-size: 12px; color: #6b7280; margin-bottom: 6px;">Selector: <code style="background: rgba(59, 130, 246, 0.1); padding: 2px 6px; border-radius: 3px;">${sample.selector}</code></div>
-            <div style="font-size: 12px; color: #374151; max-height: 80px; overflow-y: auto; line-height: 1.4; background: white; padding: 6px; border-radius: 4px; border: 1px solid #e5e7eb;">${sample.content || '(empty)'}</div>
+            <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-bottom: 6px;">Selector: <code style="background: rgba(59, 130, 246, 0.2); padding: 4px 8px; border-radius: 6px; backdrop-filter: blur(5px);">${sample.selector}</code></div>
+            <div style="font-size: 12px; color: rgba(255, 255, 255, 0.8); max-height: 80px; overflow-y: auto; line-height: 1.4; background: rgba(0, 0, 0, 0.4); padding: 8px; border-radius: 8px; backdrop-filter: blur(5px);">${sample.content || '(empty)'}</div>
           </div>
         `).join('')}
       </div>
@@ -590,21 +589,21 @@ const templates = {
   
   error: (message) => /*html*/`
     <div style="margin-bottom: 20px;">
-      <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px;">Error</h4>
-      <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px;">
-        <div style="color: #991b1b; font-weight: 500;">⚠️ ${message}</div>
+      <h4 style="margin: 0 0 12px 0; color: rgba(255, 255, 255, 0.95); font-size: 16px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">Error</h4>
+      <div style="background: rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);">
+        <div style="color: rgba(255, 255, 255, 0.95); font-weight: 500; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">⚠️ ${message}</div>
       </div>
     </div>
   `,
   
   actionResult: (feedback, result) => /*html*/`
     <div style="margin-bottom: 20px;">
-      <div style="background: #dcfce7; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-        <div style="color: #166534; font-weight: 600; margin-bottom: 8px;">✓ ${feedback}</div>
+      <div style="background: rgba(16, 185, 129, 0.2); border-radius: 16px; padding: 16px; margin-bottom: 12px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);">
+        <div style="color: rgba(255, 255, 255, 0.95); font-weight: 600; margin-bottom: 8px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">✓ ${feedback}</div>
       </div>
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
-        <div style="font-weight: 500; margin-bottom: 8px; color: #374151;">Result</div>
-        <pre style="font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; font-size: 12px; color: #374151; background: white; padding: 12px; border-radius: 6px; border: 1px solid #e5e7eb; max-height: 300px; overflow: auto; margin: 0; white-space: pre-wrap; word-break: break-all;">${typeof result === 'string' ? result : JSON.stringify(result, null, 2)}</pre>
+      <div style="background: rgba(0, 0, 0, 0.3); border-radius: 16px; padding: 16px; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);">
+        <div style="font-weight: 500; margin-bottom: 8px; color: rgba(255, 255, 255, 0.9);">Result</div>
+        <pre style="font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; font-size: 12px; color: rgba(255, 255, 255, 0.9); background: rgba(0, 0, 0, 0.4); padding: 12px; border-radius: 12px; max-height: 300px; overflow: auto; margin: 0; white-space: pre-wrap; word-break: break-all; backdrop-filter: blur(5px);">${typeof result === 'string' ? result : JSON.stringify(result, null, 2)}</pre>
       </div>
     </div>
   `
@@ -664,6 +663,16 @@ const createEventHandler = (mapping) => async (e) => {
     return false
   }
   
+  // Handle left-click selection
+  if (e.button === 0 && state.currentElement) {
+    const result = await window.pickrActionManager.executeByKey('click', state.currentElement)
+    if (result) {
+      toastSystem.create(result.feedback, result.error ? 'error' : 'success', config.ui.timing.toast)
+      elementState.freeze()
+    }
+    return false
+  }
+  
   // Handle other mouse events if needed
   const actionKey = typeof mapping === 'function' ? mapping(e) : mapping
   if (state.currentElement && window.pickrActionManager && actionKey) {
@@ -677,9 +686,9 @@ const createEventHandler = (mapping) => async (e) => {
 }
 
 // Unified keyboard handler for both modes
-const createKeyboardHandler = (cleanups, additionalHandlers = {}) => {
+const createKeyboardHandler = (additionalHandlers = {}) => {
   const keyHandlers = {
-    escape: () => exitMode(cleanups),
+    escape: handleEscape,
     p: () => togglePause(),
     s: () => toggleSidebar(),
     h: () => toggleLegend(),
@@ -690,23 +699,49 @@ const createKeyboardHandler = (cleanups, additionalHandlers = {}) => {
     d: () => moveSelection('right'),
     q: () => moveSelection('previous'),
     e: () => moveSelection('next'),
-    g: () => {}, // Future selection expansion features
-    r: () => {}, // Future selection expansion features
+    g: () => {
+      if (state.currentElement && window.pickrActionManager) {
+        window.pickrActionManager.executeByKey('g', state.currentElement).then(result => {
+          if (result) {
+            toastSystem.create(result.feedback, result.error ? 'error' : 'success', config.ui.timing.toast)
+          }
+        })
+      }
+    },
+    r: () => {
+      if (state.currentElement && window.pickrActionManager) {
+        window.pickrActionManager.executeByKey('r', state.currentElement).then(result => {
+          if (result) {
+            toastSystem.create(result.feedback, result.error ? 'error' : 'success', config.ui.timing.toast)
+          }
+        })
+      }
+    },
+    z: () => {
+      if (state.currentElement && window.pickrActionManager) {
+        window.pickrActionManager.executeByKey('z', state.currentElement).then(result => {
+          if (result) {
+            toastSystem.create(result.feedback, result.error ? 'error' : 'success', config.ui.timing.toast)
+          }
+        })
+      }
+    }
   }
   
   return (e) => {
     const key = e.key.toLowerCase()
     
-    // Early return for input fields (except our own)
+    // Early return for input fields (except specific keys)
     const activeElement = document.activeElement
     const isInputField = activeElement && (
       activeElement.tagName === 'INPUT' || 
       activeElement.tagName === 'TEXTAREA' || 
-      activeElement.contentEditable === 'true' ||
-      activeElement.id === 'pickr-selector-input'
+      activeElement.contentEditable === 'true'
     )
     
-    if (isInputField && activeElement.id !== 'pickr-selector-input') return
+    // Allow only specific keys when in input fields
+    const allowedInInput = ['escape', 'enter']
+    if (isInputField && !allowedInInput.includes(key)) return
     
     // Check if this is one of our keys
     const isActionKey = window.pickrActionManager && window.pickrActionManager.getByKey(key)
@@ -720,7 +755,10 @@ const createKeyboardHandler = (cleanups, additionalHandlers = {}) => {
     e.stopImmediatePropagation()
     
     // Handle action keys first
-    if (handleAction(key, state.currentElement)) return
+    if (handleAction(key, state.currentElement)) {
+      closeUIOnSuccess()
+      return
+    }
     
     // Handle interface keys
     if (keyHandlers[key]) {
@@ -784,19 +822,27 @@ const toggleFullHelp = createToggle(
 )
 
 const togglePause = () => {
-  setState({ isPaused: !state.isPaused })
+  const newPausedState = !state.isPaused
+  setState({ isPaused: newPausedState })
+  
+  // Freeze highlights when paused
+  if (newPausedState) {
+    elementState.freeze()
+  } else {
+    elementState.unfreeze()
+  }
   
   const legend = document.getElementById('pickr-legend-overlay')
   if (legend) {
     const pauseIndicator = legend.querySelector('.pause-indicator')
     if (pauseIndicator) {
-      pauseIndicator.textContent = state.isPaused ? '⏸️ PAUSED' : ''
-      pauseIndicator.style.display = state.isPaused ? 'inline' : 'none'
+      pauseIndicator.textContent = newPausedState ? '⏸️ PAUSED' : ''
+      pauseIndicator.style.display = newPausedState ? 'inline' : 'none'
     }
   }
   
-  const message = state.isPaused ? 'Selection paused' : 'Selection resumed'
-  const type = state.isPaused ? 'warning' : 'success'
+  const message = newPausedState ? 'Selection paused' : 'Selection resumed'
+  const type = newPausedState ? 'warning' : 'success'
   toastSystem.create(message, type, config.ui.timing.toast)
 }
 
@@ -833,21 +879,8 @@ const getNextElement = (direction, element) => {
 }
 
 const selectElement = (element) => {
-  // Clear previous selection
-  if (state.currentElement) {
-    state.currentElement.style.outline = ''
-    state.currentElement.style.outlineOffset = ''
-  }
-  
-  // Set new selection
-  setState({ currentElement: element })
-  domOps.setStyles(element, {
-    outline: '2px solid rgba(59, 130, 246, 0.6)',
-    outlineOffset: '2px'
-  })
-  
-  updateHighlight(element)
-  sidebar.update(templates.mouseStats(elementOps.getStats(element)))
+  if (!element) return
+  elementState.set(element)
 }
 
 // Helper functions for element navigation
@@ -906,8 +939,8 @@ const cleanup = {
   events: (cleanups) => eventManager.removeAll(cleanups),
   highlight: () => updateHighlight(null),
   overlays: () => {
-    legendOverlay.remove()
-    compactHelpOverlay.remove()
+    legendOverlay.hide()
+    compactHelpOverlay.hide()
     contextMenu.hide()
   },
   sidebar: () => sidebar.close(),
@@ -937,19 +970,17 @@ const cleanup = {
   }
 }
 
-// Simple exit function
-const exitMode = (cleanups) => cleanup.all(cleanups)
-
 // Simple state management
 const state = createState({
   sidebar: null,
   isSidebarOpen: false,
   activeMode: null,
   isPaused: false,
+  isFrozen: false,
   currentElement: null
 })
 
-// Simple state helpers
+// State helpers
 const setState = (updates) => Object.assign(state, updates)
 const getState = () => ({ ...state })
 
@@ -971,6 +1002,38 @@ const sidebar = {
   
   update: (content) => {
     if (!state.sidebar) return
+    state.sidebar.querySelector('#pickr-content').innerHTML = content
+  },
+  
+  updatePreviews: (element) => {
+    if (!state.sidebar || !element) return
+    
+    const previews = generateAllPreviews(element)
+    const content = previews.map(preview => `
+      <div class="preview-section" style="margin-bottom: 24px;">
+        <h4 style="margin: 0 0 8px 0; color: rgba(255, 255, 255, 0.95); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">
+          ${preview.title}
+        </h4>
+        <div class="preview-content" style="
+          background: ${preview.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0, 0, 0, 0.3)'};
+          border-radius: 16px;
+          padding: 12px;
+          font-family: ${preview.type === 'code' ? "'SF Mono', Monaco, monospace" : 'inherit'};
+          font-size: 12px;
+          line-height: 1.4;
+          color: ${preview.type === 'error' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.8)'};
+          white-space: pre-wrap;
+          word-break: break-word;
+          max-height: 200px;
+          overflow-y: auto;
+          backdrop-filter: blur(10px);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        ">
+          ${preview.content}
+        </div>
+      </div>
+    `).join('')
+    
     state.sidebar.querySelector('#pickr-content').innerHTML = content
   }
 }
@@ -1002,6 +1065,7 @@ const contextMenu = {
     })
     
     domOps.append(document.body, menu)
+    setState({ contextMenu: menu })
     
     // Handle menu item clicks
     menu.addEventListener('click', async (e) => {
@@ -1073,28 +1137,272 @@ const contextMenu = {
   },
   
   hide: () => {
-    const menu = document.getElementById('pickr-context-menu')
-    if (menu) menu.remove()
+    if (state.contextMenu) {
+      state.contextMenu.remove()
+      setState({ contextMenu: null })
+    }
+  },
+  
+  isOpen: () => !!state.contextMenu,
+}
+
+// Preview system
+const previews = {
+  // Basic previews
+  innerText: (element) => ({
+    title: 'Text Content',
+    content: element.textContent?.trim() || element.innerText?.trim() || 'No text content',
+    type: 'text'
+  }),
+  
+  html: (element) => ({
+    title: 'HTML',
+    content: element.outerHTML || element.innerHTML || 'No HTML content',
+    type: 'html'
+  }),
+  
+  // Element info previews
+  selector: (element) => ({
+    title: 'CSS Selector',
+    content: generateSelector(element) || 'Could not generate selector',
+    type: 'code'
+  }),
+  
+  attributes: (element) => ({
+    title: 'Attributes',
+    content: Array.from(element.attributes || [])
+      .map(attr => `${attr.name}="${attr.value}"`)
+      .join('\n') || 'No attributes',
+    type: 'code'
+  }),
+  
+  // Style previews
+  styles: (element) => ({
+    title: 'Computed Styles',
+    content: getComputedStyles(element),
+    type: 'code'
+  }),
+  
+  dimensions: (element) => ({
+    title: 'Dimensions',
+    content: getDimensions(element),
+    type: 'text'
+  }),
+  
+  // URL previews
+  url: (element) => ({
+    title: 'URL',
+    content: element.href || element.src || element.getAttribute('data-url') || 'No URL',
+    type: 'text'
+  }),
+  
+  // Element structure
+  structure: (element) => ({
+    title: 'Element Structure',
+    content: getElementStructure(element),
+    type: 'text'
+  })
+}
+
+// Helper functions for previews
+const generateSelector = (element) => {
+  if (element.id) return `#${element.id}`
+  
+  if (element.className) {
+    const classes = element.className.split(' ').filter(c => c.trim())
+    if (classes.length > 0) {
+      const classSelector = `.${classes.join('.')}`
+      if (document.querySelectorAll(classSelector).length === 1) {
+        return classSelector
+      }
+    }
   }
+  
+  const tag = element.tagName.toLowerCase()
+  const parent = element.parentElement
+  if (!parent) return tag
+  
+  const siblings = Array.from(parent.children).filter(child => child.tagName === element.tagName)
+  if (siblings.length === 1) {
+    return `${parent.tagName.toLowerCase()} > ${tag}`
+  }
+  
+  const index = siblings.indexOf(element) + 1
+  return `${parent.tagName.toLowerCase()} > ${tag}:nth-child(${index})`
+}
+
+const getComputedStyles = (element) => {
+  const styles = getComputedStyle(element)
+  const importantStyles = [
+    'display', 'position', 'width', 'height', 'margin', 'padding',
+    'background', 'color', 'font-size', 'font-weight', 'border',
+    'opacity', 'z-index', 'overflow', 'flex', 'grid'
+  ]
+  
+  return importantStyles
+    .map(prop => `${prop}: ${styles[prop]}`)
+    .join('\n')
+}
+
+const getDimensions = (element) => {
+  const rect = element.getBoundingClientRect()
+  const styles = getComputedStyle(element)
+  
+  return `Width: ${rect.width}px (${styles.width})
+Height: ${rect.height}px (${styles.height})
+Top: ${rect.top}px
+Left: ${rect.left}px
+Margin: ${styles.margin}
+Padding: ${styles.padding}`
+}
+
+const getElementStructure = (element) => {
+  const tag = element.tagName.toLowerCase()
+  const id = element.id ? `#${element.id}` : ''
+  const classes = element.className ? `.${element.className.split(' ').join('.')}` : ''
+  const children = element.children.length
+  
+  return `<${tag}${id}${classes}>
+  Children: ${children}
+  Text length: ${element.textContent?.length || 0} chars`
+}
+
+// Generate all previews for an element
+const generateAllPreviews = (element) => {
+  if (!element) return []
+  
+  return Object.entries(previews).map(([key, previewFn]) => {
+    try {
+      return previewFn(element)
+    } catch (error) {
+      return {
+        title: key.charAt(0).toUpperCase() + key.slice(1),
+        content: `Error: ${error.message}`,
+        type: 'error'
+      }
+    }
+  })
+}
+
+// Mode manager for toggling modes
+const modeManager = {
+  currentMode: null,
+  cleanups: [],
+  
+  toggle: (mode, modeFunction) => {
+    // If same mode is active, close it
+    if (modeManager.currentMode === mode) {
+      modeManager.close()
+      return
+    }
+    
+    // If different mode is active, close it first
+    if (modeManager.currentMode) {
+      modeManager.close()
+    }
+    
+    // Open new mode
+    modeManager.currentMode = mode
+    modeFunction()
+  },
+  
+  close: () => {
+    if (modeManager.currentMode) {
+      cleanup.all(modeManager.cleanups)
+      modeManager.cleanups = []
+      modeManager.currentMode = null
+      
+      // Use comprehensive cleanup
+      closeAllUI()
+    }
+  },
+  
+  isActive: () => !!modeManager.currentMode
+}
+
+// Shared element highlighting styles
+const highlightStyles = {
+  hover: {
+    outline: '2px solid rgba(59, 130, 246, 0.6)',
+    outlineOffset: '2px'
+  },
+  selected: {
+    outline: '3px solid #10b981',
+    outlineOffset: '2px'
+  },
+  clear: {
+    outline: '',
+    outlineOffset: ''
+  }
+}
+
+// Shared element state management
+const elementState = {
+  set: (element) => {
+    setState({ currentElement: element })
+    domOps.setStyles(element, highlightStyles.hover)
+    updateHighlight(element)
+    sidebarUpdates.previews(element)
+  },
+  
+  clear: () => {
+    if (state.currentElement) {
+      domOps.setStyles(state.currentElement, highlightStyles.clear)
+      setState({ currentElement: null })
+      updateHighlight(null)
+    }
+  },
+  
+  select: (element) => {
+    setState({ currentElement: element, isPaused: true })
+    domOps.setStyles(element, highlightStyles.selected)
+    sidebarUpdates.previews(element)
+  },
+  
+  freeze: () => {
+    setState({ isFrozen: true })
+    toastSystem.create('Highlights frozen - ESC to unfreeze', 'info', config.ui.timing.toast)
+  },
+  
+  unfreeze: () => {
+    setState({ isFrozen: false })
+    toastSystem.create('Highlights unfrozen', 'info', config.ui.timing.toast)
+  }
+}
+
+// Shared sidebar update utilities
+const sidebarUpdates = {
+  error: (message) => sidebar.update(templates.error(message)),
+  previews: (element) => sidebar.updatePreviews(element),
+  content: (html) => sidebar.update(html)
+}
+
+// Shared mode initialization
+const initMode = (modeName) => {
+  setState({ 
+    activeMode: modeName, 
+    isPaused: false, 
+    currentElement: null 
+  })
+  sidebar.open()
+  legendOverlay.create(modeName)
+  compactHelpOverlay.create(modeName)
 }
 
 // Mouse selector mode
 const pickrMouseSelector = () => {
-  setState({ activeMode: 'mouse', isPaused: false, currentElement: null })
-  sidebar.open()
-  legendOverlay.create('mouse')
-  compactHelpOverlay.create('mouse')
+  initMode('mouse')
   
   const cleanups = []
   
   const handleMouseMove = (e) => {
-    if (state.isPaused) return
+    if (state.isPaused || state.isFrozen) return
     
     const element = e.target
     
     // Early return for pickr elements
     if (isPickrElement(element)) {
-      clearCurrentElement()
+      elementState.clear()
       return
     }
     
@@ -1102,31 +1410,13 @@ const pickrMouseSelector = () => {
     if (element === state.currentElement) return
     
     // Clear previous element
-    clearCurrentElement()
+    elementState.clear()
     
     // Set new element
-    setCurrentElement(element)
+    elementState.set(element)
   }
   
-  const clearCurrentElement = () => {
-    if (!state.currentElement) return
-    state.currentElement.style.outline = ''
-    state.currentElement.style.outlineOffset = ''
-    setState({ currentElement: null })
-    updateHighlight(null)
-  }
-  
-  const setCurrentElement = (element) => {
-    setState({ currentElement: element })
-    domOps.setStyles(element, {
-      outline: '2px solid rgba(59, 130, 246, 0.6)',
-      outlineOffset: '2px'
-    })
-    updateHighlight(element)
-    sidebar.update(templates.mouseStats(elementOps.getStats(element)))
-  }
-  
-  const handleKeyDown = createKeyboardHandler(cleanups)
+  const handleKeyDown = createKeyboardHandler()
   
   // Declarative event registration
   const mouseHandlers = {
@@ -1147,40 +1437,47 @@ const pickrMouseSelector = () => {
     ...eventManager.register.mouse(document, mouseHandlers),
     ...eventManager.register.keyboard(document, keyboardHandlers)
   )
+  
+  // Store cleanups in mode manager
+  modeManager.cleanups = cleanups
 }
 
 // Input selector mode
 const pickrInputSelector = () => {
-  setState({ activeMode: 'input', isPaused: false, currentElement: null })
-  sidebar.open()
-  legendOverlay.create('input')
-  compactHelpOverlay.create('input')
+  initMode('input')
   
   const inputOverlay = domOps.create('div', {
     id: 'pickr-input-overlay',
     innerHTML: /*html*/`
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="color: #6b7280; font-size: 14px; font-weight: 500;">CSS Selector:</span>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span style="color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">CSS Selector:</span>
         <input type="text" id="pickr-selector-input" placeholder="Enter CSS selector (e.g., .class, #id, tag)" style="
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          padding: 8px 16px;
+          border: none;
+          border-radius: 16px;
+          padding: 12px 20px;
           font-size: 14px;
           font-family: 'SF Mono', Monaco, monospace;
           width: 350px;
-          background: white;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        ">
+          background: rgba(0, 0, 0, 0.4);
+          color: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+          outline: none;
+          transition: all 0.2s ease;
+          caret-color: rgba(255, 255, 255, 0.9);
+        " onfocus="this.style.background='rgba(0, 0, 0, 0.6)'; this.style.boxShadow='0 6px 25px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)'" onblur="this.style.background='rgba(0, 0, 0, 0.4)'; this.style.boxShadow='0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'">
         <button id="pickr-close-input" style="
-          background: none;
+          background: rgba(0, 0, 0, 0.3);
           border: none;
-          font-size: 20px;
+          font-size: 18px;
           cursor: pointer;
-          color: #6b7280;
-          padding: 6px;
-          border-radius: 6px;
-          transition: background 0.2s;
-        ">×</button>
+          color: rgba(255, 255, 255, 0.8);
+          padding: 8px;
+          border-radius: 12px;
+          transition: all 0.2s ease;
+          backdrop-filter: blur(10px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        " onmouseenter="this.style.background='rgba(239, 68, 68, 0.4)'; this.style.color='rgba(255, 255, 255, 0.95)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)'" onmouseleave="this.style.background='rgba(0, 0, 0, 0.3)'; this.style.color='rgba(255, 255, 255, 0.8)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.2)'">×</button>
       </div>
     `
   })
@@ -1192,12 +1489,11 @@ const pickrInputSelector = () => {
       left: '50%',
       transform: 'translateX(-50%)',
       zIndex: '999997',
-      background: 'rgba(255, 255, 255, 0.85)',
+      background: 'rgba(0, 0, 0, 0.6)',
       backdropFilter: 'blur(25px)',
-      border: '1px solid #e2e8f0',
-      borderRadius: '12px',
-      padding: '16px',
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+      borderRadius: '20px',
+      padding: '20px',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2)',
       fontFamily: 'system-ui, -apple-system, sans-serif'
     })),
     tap(el => domOps.append(document.body, el))
@@ -1214,12 +1510,13 @@ const pickrInputSelector = () => {
     // Early return for empty selector
     if (!selector.trim()) {
       updateHighlight(null)
-      sidebar.update(/*html*/`
+      currentSelectorResults = null
+      sidebarUpdates.content(/*html*/`
         <div style="margin-bottom: 20px;">
-          <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 16px;">Input Selector</h4>
-          <div style="color: #6b7280; text-align: center; padding: 40px 20px;">
+          <h4 style="margin: 0 0 12px 0; color: rgba(255, 255, 255, 0.95); font-size: 16px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);">Input Selector</h4>
+          <div style="color: rgba(255, 255, 255, 0.6); text-align: center; padding: 40px 20px;">
             <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">⌨️</div>
-            <div style="font-weight: 500; margin-bottom: 8px;">Enter a CSS selector</div>
+            <div style="font-weight: 500; margin-bottom: 8px; color: rgba(255, 255, 255, 0.8);">Enter a CSS selector</div>
             <div style="font-size: 13px;">Examples: .class, #id, tag, tag.class</div>
           </div>
         </div>
@@ -1236,7 +1533,8 @@ const pickrInputSelector = () => {
     // Early return for invalid selector
     if (!elementOps.isValidSelector(selector)) {
       updateHighlight(null)
-      sidebar.update(templates.error(`Invalid selector: ${selector}`))
+      currentSelectorResults = null
+      sidebarUpdates.error(`Invalid selector: ${selector}`)
       return
     }
     
@@ -1245,7 +1543,8 @@ const pickrInputSelector = () => {
     // Early return for no elements
     if (elements.length === 0) {
       updateHighlight(null)
-      sidebar.update(templates.error(`No elements found for selector: ${selector}`))
+      currentSelectorResults = null
+      sidebarUpdates.error(`No elements found for selector: ${selector}`)
       return
     }
     
@@ -1254,7 +1553,8 @@ const pickrInputSelector = () => {
     // Early return for no valid elements
     if (validElements.length === 0) {
       updateHighlight(null)
-      sidebar.update(templates.error(`No valid elements found (excluding interface elements)`))
+      currentSelectorResults = null
+      sidebarUpdates.error(`No valid elements found (excluding interface elements)`)
       return
     }
     
@@ -1262,7 +1562,7 @@ const pickrInputSelector = () => {
     validElements.forEach((el, index) => {
       if (index === 0) {
         updateHighlight(el)
-        setState({ currentElement: el })
+        elementState.set(el)
       }
       domOps.setStyles(el, {
         outline: '2px solid rgba(59, 130, 246, 0.6)',
@@ -1270,20 +1570,82 @@ const pickrInputSelector = () => {
       })
     })
     
-    sidebar.update(templates.inputResults(selector, validElements))
+    // Store results for Enter key handling
+    currentSelectorResults = {
+      selector,
+      elements: validElements,
+      currentIndex: 0
+    }
+    
+    sidebarUpdates.content(templates.inputResults(selector, validElements, currentSelectorResults.currentIndex))
   }, config.ui.timing.debounce)
+  
+  // Store current selector results for Enter key handling
+  let currentSelectorResults = null
   
   const handleInput = (e) => updateResults(e.target.value)
   
-  const handleKeyDown = createKeyboardHandler(cleanups, {
-    enter: (e) => {
-      e.preventDefault()
+  const handleEnterKey = async (e) => {
+    e.preventDefault()
+    
+    // If no results, just update the results
+    if (!currentSelectorResults) {
       updateResults(input.value)
+      return
     }
+    
+    // If we have results, execute the primary action (like left-click in mouse mode)
+    if (currentSelectorResults.elements.length > 0) {
+      const currentElement = currentSelectorResults.elements[currentSelectorResults.currentIndex]
+      
+      if (currentElement && window.pickrActionManager) {
+        const result = await window.pickrActionManager.executeByKey('click', currentElement)
+        if (result) {
+          toastSystem.create(result.feedback, result.error ? 'error' : 'success', config.ui.timing.toast)
+          sidebar.update(templates.actionResult(result.feedback, result.result))
+          elementState.freeze()
+        }
+      }
+    }
+  }
+  
+  // Handle navigation between multiple elements
+  const handleElementNavigation = (direction) => {
+    if (!currentSelectorResults || currentSelectorResults.elements.length <= 1) return
+    
+    const { elements, currentIndex } = currentSelectorResults
+    
+    let newIndex
+    if (direction === 'next') {
+      newIndex = (currentIndex + 1) % elements.length
+    } else {
+      newIndex = currentIndex === 0 ? elements.length - 1 : currentIndex - 1
+    }
+    
+    // Update current index
+    currentSelectorResults.currentIndex = newIndex
+    
+    // Update visual selection
+    const newElement = elements[newIndex]
+    updateHighlight(newElement)
+    elementState.set(newElement)
+    
+    // Update sidebar to show current element info and navigation
+    sidebar.updatePreviews(newElement)
+    sidebar.update(templates.inputResults(currentSelectorResults.selector, currentSelectorResults.elements, newIndex))
+    
+    // Show feedback
+    toastSystem.create(`Element ${newIndex + 1} of ${elements.length}`, 'info', config.ui.timing.toast)
+  }
+  
+  const handleKeyDown = createKeyboardHandler({
+    enter: handleEnterKey,
+    q: () => handleElementNavigation('previous'),
+    e: () => handleElementNavigation('next')
   })
   
   inputOverlay.querySelector('#pickr-close-input').onclick = () => {
-    exitMode(cleanups)
+    modeManager.close()
   }
   
   // Declarative event registration
@@ -1299,11 +1661,119 @@ const pickrInputSelector = () => {
     ...eventManager.register.mouse(input, inputHandlers),
     ...eventManager.register.keyboard(document, keyboardHandlers)
   )
+  
+  // Store cleanups in mode manager
+  modeManager.cleanups = cleanups
 }
 
+// Comprehensive UI cleanup function
+const closeAllUI = () => {
+  // Close context menu
+  contextMenu.hide()
+  
+  // Close all overlays
+  legendOverlay.hide()
+  compactHelpOverlay.hide()
+  
+  // Close sidebar
+  sidebar.close()
+  
+  // Close input overlay
+  const inputOverlay = document.getElementById('pickr-input-overlay')
+  if (inputOverlay) inputOverlay.remove()
+  
+  // Close any full help overlay
+  const fullHelpOverlay = document.getElementById('pickr-full-help')
+  if (fullHelpOverlay) fullHelpOverlay.remove()
+  
+  // Clear any element highlights
+  elementState.clear()
+  
+  // Reset state
+  setState({
+    isSidebarOpen: false,
+    isHelpOpen: false,
+    isFrozen: false,
+    contextMenu: null
+  })
+}
+
+// Close UI on successful actions
+const closeUIOnSuccess = () => {
+  // Close context menu and help overlays on successful actions
+  contextMenu.hide()
+  
+  const fullHelpOverlay = document.getElementById('pickr-full-help')
+  if (fullHelpOverlay) {
+    fullHelpOverlay.remove()
+    setState({ isHelpOpen: false })
+  }
+}
+
+// Enhanced ESC key handler
+const handleEscape = () => {
+  // Layer 1: Unfreeze highlights if frozen
+  if (state.isFrozen) {
+    elementState.unfreeze()
+    return
+  }
+  
+  // Layer 2: Close context menu if open
+  if (contextMenu.isOpen()) {
+    contextMenu.hide()
+    return
+  }
+  
+  // Layer 3: Close sidebar if open
+  if (state.isSidebarOpen) {
+    sidebar.close()
+    return
+  }
+  
+  // Layer 4: Close help overlays if open
+  const fullHelpOverlay = document.getElementById('pickr-full-help')
+  if (fullHelpOverlay) {
+    fullHelpOverlay.remove()
+    setState({ isHelpOpen: false })
+    return
+  }
+  
+  // Layer 5: Handle paused state - unpause first, then close mode
+  if (state.isPaused && modeManager.isActive()) {
+    togglePause() // Unpause the mode
+    return
+  }
+  
+  // Layer 6: Close active mode (this will close everything)
+  if (modeManager.isActive()) {
+    modeManager.close()
+    return
+  }
+  
+  // Layer 7: Final cleanup - close any remaining UI
+  closeAllUI()
+}
+
+// Global ESC listener for comprehensive cleanup - always works regardless of focus
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    e.stopPropagation()
+    handleEscape()
+  }
+}, { capture: true })
+
 // Export functions to global scope for service worker access
-window.pickrMouseSelector = pickrMouseSelector
-window.pickrInputSelector = pickrInputSelector
+window.pickrMouseSelector = () => modeManager.toggle('mouse', pickrMouseSelector)
+window.pickrInputSelector = () => modeManager.toggle('input', pickrInputSelector)
+
+// Expose globals for actions
+window.pickrState = state
+window.pickrSidebar = sidebar
+window.pickrDomOps = domOps
+window.pickrToastSystem = toastSystem
+window.pickrElementState = elementState
+window.pickrHighlightStyles = highlightStyles
 
 // Element selector ready
 }

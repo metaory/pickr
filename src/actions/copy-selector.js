@@ -17,6 +17,25 @@ const copySelectorAction = {
   }
 }
 
+// Reset element action
+const resetElementAction = {
+  name: 'Reset Element',
+  key: 'z',
+  aliases: [],
+  category: 'Manipulate',
+  description: 'Reset element to original size',
+  execute: (element) => {
+    if (!state.isPaused) {
+      return { feedback: 'Must be in paused mode to manipulate elements', result: null, error: true }
+    }
+    
+    element.style.transform = ''
+    element.style.transformOrigin = ''
+    
+    return { feedback: 'Element reset to original size', result: null }
+  }
+}
+
 // Pure function for selector generation
 const generateSelector = (element) => {
   if (element.id) return `#${element.id}`
@@ -44,5 +63,6 @@ const generateSelector = (element) => {
   return `${parent.tagName.toLowerCase()} > ${tag}:nth-child(${index})`
 }
 
-// Register action
-window.pickrActionManager.register(copySelectorAction) 
+// Register actions
+window.pickrActionManager.register(copySelectorAction)
+window.pickrActionManager.register(resetElementAction) 

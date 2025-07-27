@@ -13,5 +13,23 @@ const copyTextAction = {
   }
 }
 
-// Register action
-window.pickrActionManager.register(copyTextAction) 
+// Left-click selection action
+const selectElementAction = {
+  name: 'Select Element',
+  key: 'click',
+  aliases: [],
+  category: 'Select',
+  description: 'Select and pause on element',
+  execute: (element) => {
+    // Use shared element state management
+    if (window.pickrElementState) {
+      window.pickrElementState.select(element)
+    }
+    
+    return { feedback: 'Element selected and paused', result: null }
+  }
+}
+
+// Register actions
+window.pickrActionManager.register(copyTextAction)
+window.pickrActionManager.register(selectElementAction) 

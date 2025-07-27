@@ -1,8 +1,8 @@
 {
-  "name": "ꛠickr",
-  "short_name": "ꛠickr",
+  "name": "pickr",
+  "short_name": "pickr",
   "description": "Visual element picker and DOM inspector",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "manifest_version": 3,
   "author": {
     "email": "metaory@gmail.com"

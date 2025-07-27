@@ -7,12 +7,12 @@ const copyAttributesAction = {
   description: 'Copy element attributes',
   execute: (element) => {
     const attributes = Array.from(element.attributes || [])
-    if (attributes.length === 0) {
-      return { feedback: 'No attributes found', result: null, error: true }
-    }
+      .map(attr => `${attr.name}="${attr.value}"`)
+      .join('\n')
     
-    const attrString = attributes.map(attr => `${attr.name}="${attr.value}"`).join(' ')
-    return { feedback: 'Attributes copied to clipboard', result: attrString }
+    return attributes
+      ? { feedback: 'Attributes copied to clipboard', result: attributes }
+      : { feedback: 'No attributes found', result: null, error: true }
   }
 }
 
